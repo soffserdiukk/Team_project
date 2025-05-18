@@ -1,13 +1,14 @@
 import tkinter as tk
 from MemoryGameLogic import MemoryGameLogic
 from MemoryGameGUI import MemoryGameGUI
-
+from typing import Optional, Tuple
 
 class MemoryGameController:
     def __init__(self, root: tk.Tk):
         self.root = root
         self.logic = MemoryGameLogic()
         self.gui = MemoryGameGUI(root, self.logic.difficulty_levels)
+        self.pending_reset: Optional[Tuple[int, int]] = None
 
         self.gui.setup_menu(self.start_game)
 
@@ -19,6 +20,12 @@ class MemoryGameController:
     def handle_click(self, idx: int) -> None:
         """Handle button click event"""
         button_text = self.gui.buttons[idx]["text"]
+
+        if self.pending_reset:
+            idx1, idx2 = self.pending_reset
+            self.reset_turn(idx1, idx2)
+            self.pending_reset = None
+
         is_match, first_index, symbol = self.logic.handle_click(idx, button_text)
 
         if symbol:
@@ -36,9 +43,18 @@ class MemoryGameController:
             if self.logic.check_win(buttons_state):
                 self.gui.show_win_message(self.logic.moves)
         elif first_index is not None:
-            self.root.after(1000, lambda: self.reset_turn(idx, first_index))
+            self.pending_reset = (idx, first_index)
+            self.root.after(500, lambda: self.check_and_reset_pending())
 
+        # <- ВАЖЛИВО! Це має бути поза if/elif
         self.gui.update_moves(self.logic.moves)
+
+    def check_and_reset_pending(self) -> None:
+        """Reset pending pair if still scheduled"""
+        if self.pending_reset:
+            idx1, idx2 = self.pending_reset
+            self.reset_turn(idx1, idx2)
+            self.pending_reset = None
 
     def reset_turn(self, idx1: int, idx2: int) -> None:
         """Reset two cards after unsuccessful match"""
