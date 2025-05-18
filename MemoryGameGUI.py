@@ -19,9 +19,13 @@ class MemoryGameGUI:
         self.buttons: List[tk.Button] = []
         self.moves_label: Optional[tk.Label] = None
 
-    def setup_menu(self, difficulty_command) -> None:
+    def setup_menu(self, difficulty_command=None) -> None:    ###функція повністю змінена
         """Create start menu with difficulty options"""
         self.clear_window()
+
+        # Зберігаємо команду, якщо передано
+        if difficulty_command:
+            self.difficulty_command = difficulty_command
 
         menu_frame = tk.Frame(self.root, bg=self.bg_color)
         menu_frame.pack(expand=True)
@@ -38,7 +42,7 @@ class MemoryGameGUI:
                 menu_frame,
                 text=f"{level} ({rows}x{cols})",
                 font=self.card_font,
-                command=lambda r=rows, c=cols: difficulty_command(r, c),
+                command=lambda r=rows, c=cols: self.difficulty_command(r, c),
                 width=15,
                 padx=10,
                 pady=5
@@ -125,7 +129,6 @@ class MemoryGameGUI:
     def update_moves(self, moves: int) -> None:
         """Update moves counter"""
         self.moves_label.config(text=f"Moves: {moves}")
-
     def clear_window(self) -> None:
         """Clear all widgets from the root window"""
         for widget in self.root.winfo_children():
