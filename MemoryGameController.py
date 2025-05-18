@@ -2,6 +2,7 @@ import tkinter as tk
 from MemoryGameLogic import MemoryGameLogic
 from MemoryGameGUI import MemoryGameGUI
 from typing import Optional, Tuple
+import pygame
 
 
 class MemoryGameController:
@@ -11,7 +12,12 @@ class MemoryGameController:
         self.gui = MemoryGameGUI(root, self.logic.difficulty_levels)
         self.pending_reset: Optional[Tuple[int, int]] = None
 
-        # Start with menu
+        # Додано звуки
+        pygame.mixer.init()
+        self.click_sound = pygame.mixer.Sound("sounds/click.wav")
+        self.match_sound = pygame.mixer.Sound("sounds/match.wav")
+        self.win_sound = pygame.mixer.Sound("sounds/win.wav")
+
         self.gui.setup_menu(self.start_game)
 
     def start_game(self, rows: int, cols: int) -> None:
@@ -20,61 +26,59 @@ class MemoryGameController:
         self.gui.setup_board(rows, cols, self.handle_click)
 
     def handle_click(self, idx: int) -> None:
-        """Handle card click event"""
-        # Check if we need to reset previous unmatched pair
-        if self.pending_reset:
-            self.reset_pending_pair()
-
+        """Handle button click event"""
         button_text = self.gui.buttons[idx]["text"]
+
+        if self.pending_reset:
+            idx1, idx2 = self.pending_reset
+            self.reset_turn(idx1, idx2)
+            self.pending_reset = None
+
+        self.click_sound.play()
+
         is_match, first_index, symbol = self.logic.handle_click(idx, button_text)
 
-        if not symbol:  # Invalid click
-            return
-
-        self.gui.update_button(idx, symbol)
+        if symbol:
+            self.gui.update_button(idx, symbol)
 
         if is_match:
-            self.handle_match(idx)
+            self.gui.update_button(idx, symbol, True)
+            self.gui.update_button(self.logic.first_index, self.logic.first_symbol, True)
+            self.logic.first_symbol = None
+            self.logic.first_index = None
+            self.logic.reset_turn()
+
+            self.match_sound.play()
+
+            # Перевірка перемоги
+            buttons_state = [btn["state"] for btn in self.gui.buttons]
+            if self.logic.check_win(buttons_state):
+                self.win_sound.play()
+                self.gui.show_win_message(self.logic.moves)
+
         elif first_index is not None:
-            self.schedule_reset(idx, first_index)
+            self.pending_reset = (idx, first_index)
+            self.root.after(500, lambda: self.check_and_reset_pending())
 
         self.gui.update_moves(self.logic.moves)
 
-    def handle_match(self, idx: int) -> None:
-        """Handle successful card match"""
-        self.gui.update_button(idx, self.logic.first_symbol, True)
-        self.gui.update_button(self.logic.first_index, self.logic.first_symbol, True)
-        self.logic.first_symbol = None
-        self.logic.first_index = None
-        self.logic.reset_turn()
-
-        # Check for win condition
-        if self.check_win():
-            self.gui.show_win_message(self.logic.moves)
-
-    def schedule_reset(self, idx1: int, idx2: int) -> None:
-        """Schedule reset for unmatched pair"""
-        self.pending_reset = (idx1, idx2)
-        self.root.after(800, self.reset_pending_pair)
-
-    def reset_pending_pair(self) -> None:
-        """Reset the pending unmatched pair"""
+    def check_and_reset_pending(self) -> None:
+        """Reset pending pair if still scheduled"""
         if self.pending_reset:
             idx1, idx2 = self.pending_reset
-            self.gui.reset_button(idx1)
-            self.gui.reset_button(idx2)
-            self.logic.reset_turn()
+            self.reset_turn(idx1, idx2)
             self.pending_reset = None
 
-    def check_win(self) -> bool:
-        """Check if all pairs have been found"""
-        buttons_state = [btn["state"] for btn in self.gui.buttons]
-        return self.logic.check_win(buttons_state)
+    def reset_turn(self, idx1: int, idx2: int) -> None:
+        """Reset two cards after unsuccessful match"""
+        self.gui.reset_button(idx1)
+        self.gui.reset_button(idx2)
+        self.logic.reset_turn()
 
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.geometry("650x650")
-    root.config(bg="#f5f5f5")
+    root.geometry("600x600")
+    root.config(bg="#f0f0f0")
     game = MemoryGameController(root)
     root.mainloop()
