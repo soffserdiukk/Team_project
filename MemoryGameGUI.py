@@ -1,6 +1,6 @@
 import tkinter as tk
-from tkinter import font
-from typing import List, Optional, Dict, Tuple
+from tkinter import font, messagebox
+from typing import List, Optional, Dict, Tuple, Callable
 
 
 class MemoryGameGUI:
@@ -9,82 +9,110 @@ class MemoryGameGUI:
         self.root.title("Memory Game")
         self.difficulty_levels = difficulty_levels
 
-        # Colors and styles
-        self.bg_color = "#f0f0f0"
-        self.card_bg = "#3498db"
+        # Modern color scheme
+        self.bg_color = "#f5f5f5"
+        self.card_bg = "#3a7ca5"
         self.card_fg = "white"
-        self.card_font = ("Arial", 12, "bold")
-        self.disabled_color = "#2ecc71"
+        self.card_font = ("Arial", 14, "bold")
+        self.disabled_color = "#2fbf71"
+        self.highlight_color = "#ffd166"
+        self.text_color = "#2b2d42"
+        self.button_hover = "#2a628f"
 
         self.buttons: List[tk.Button] = []
         self.moves_label: Optional[tk.Label] = None
+        self.difficulty_command: Optional[Callable] = None
 
-    def setup_menu(self, difficulty_command=None) -> None:    ###функція повністю змінена
-        """Create start menu with difficulty options"""
+    def setup_menu(self, difficulty_command: Callable) -> None:
+        """Create modern start menu with difficulty options"""
         self.clear_window()
-
-        # Зберігаємо команду, якщо передано
-        if difficulty_command:
-            self.difficulty_command = difficulty_command
+        self.difficulty_command = difficulty_command
 
         menu_frame = tk.Frame(self.root, bg=self.bg_color)
-        menu_frame.pack(expand=True)
+        menu_frame.pack(expand=True, padx=20, pady=20)
 
-        tk.Label(
+        # Game title
+        title = tk.Label(
             menu_frame,
             text="Memory Game",
-            font=("Arial", 24, "bold"),
-            bg=self.bg_color
-        ).pack(pady=20)
+            font=("Arial", 28, "bold"),
+            bg=self.bg_color,
+            fg=self.text_color
+        )
+        title.pack(pady=(0, 30))
 
+        # Difficulty buttons
         for level, (rows, cols) in self.difficulty_levels.items():
-            tk.Button(
+            btn = tk.Button(
                 menu_frame,
-                text=f"{level} ({rows}x{cols})",
+                text=f"{level} ({rows}×{cols})",
                 font=self.card_font,
                 command=lambda r=rows, c=cols: self.difficulty_command(r, c),
-                width=15,
-                padx=10,
-                pady=5
-            ).pack(pady=5)
+                width=18,
+                pady=8,
+                bg=self.card_bg,
+                fg="white",
+                activebackground=self.button_hover,
+                relief="flat",
+                bd=0
+            )
+            btn.pack(pady=6)
+            btn.bind("<Enter>", lambda e, b=btn: b.config(bg=self.button_hover))
+            btn.bind("<Leave>", lambda e, b=btn: b.config(bg=self.card_bg))
 
-        tk.Button(
+        # Exit button
+        exit_btn = tk.Button(
             menu_frame,
             text="Exit",
             font=self.card_font,
             command=self.root.quit,
-            width=15,
-            padx=10,
-            pady=5
-        ).pack(pady=20)
+            width=18,
+            pady=8,
+            bg="#d64045",
+            fg="white",
+            activebackground="#c73232",
+            relief="flat"
+        )
+        exit_btn.pack(pady=(20, 0))
+        exit_btn.bind("<Enter>", lambda e: exit_btn.config(bg="#c73232"))
+        exit_btn.bind("<Leave>", lambda e: exit_btn.config(bg="#d64045"))
 
-    def setup_board(self, rows: int, cols: int, button_command) -> None:
-        """Setup the game board with styled buttons"""
+    def setup_board(self, rows: int, cols: int, button_command: Callable) -> None:
+        """Setup modern game board with cards"""
         self.clear_window()
 
-        # Header with moves counter
+        # Header with moves counter and menu button
         header_frame = tk.Frame(self.root, bg=self.bg_color)
-        header_frame.pack(fill="x", pady=10)
+        header_frame.pack(fill="x", pady=(10, 20), padx=20)
 
         self.moves_label = tk.Label(
             header_frame,
             text="Moves: 0",
-            font=self.card_font,
-            bg=self.bg_color
+            font=("Arial", 16, "bold"),
+            bg=self.bg_color,
+            fg=self.text_color
         )
-        self.moves_label.pack(side="left", padx=20)
+        self.moves_label.pack(side="left")
 
-        tk.Button(
+        menu_btn = tk.Button(
             header_frame,
             text="Menu",
-            font=self.card_font,
-            command=self.setup_menu,
-            padx=10
-        ).pack(side="right", padx=20)
+            font=("Arial", 12),
+            command=lambda: self.setup_menu(self.difficulty_command),
+            padx=15,
+            pady=3,
+            bg="#8d99ae",
+            fg="white",
+            activebackground="#6c757d",
+            relief="flat"
+        )
+        menu_btn.pack(side="right")
+        menu_btn.bind("<Enter>", lambda e: menu_btn.config(bg="#6c757d"))
+        menu_btn.bind("<Leave>", lambda e: menu_btn.config(bg="#8d99ae"))
 
-        # Game board
+        # Game board with cards
         board_frame = tk.Frame(self.root, bg=self.bg_color)
-        board_frame.pack(expand=True)
+        board_frame.pack(expand=True, padx=20, pady=(0, 20))
 
         self.buttons = []
         for i in range(rows):
@@ -98,44 +126,119 @@ class MemoryGameGUI:
                     height=2,
                     bg=self.card_bg,
                     fg=self.card_fg,
-                    activebackground="#2980b9",
-                    command=lambda x=idx: button_command(x)
+                    activebackground=self.button_hover,
+                    command=lambda x=idx: button_command(x),
+                    relief="raised",
+                    borderwidth=3
                 )
-                btn.grid(row=i, column=j, padx=5, pady=5)
+                btn.grid(row=i, column=j, padx=5, pady=5, ipadx=5, ipady=5)
                 self.buttons.append(btn)
 
     def update_button(self, idx: int, symbol: str, disabled: bool = False) -> None:
-        """Update button appearance"""
+        """Update card appearance with animation effect"""
         btn = self.buttons[idx]
         if disabled:
             btn.config(
                 text=symbol,
                 state="disabled",
                 disabledforeground="white",
-                bg=self.disabled_color
+                bg=self.disabled_color,
+                relief="sunken"
             )
         else:
             btn.config(
                 text=symbol,
-                bg="#f1c40f",
-                fg="black"
+                bg=self.highlight_color,
+                fg="black",
+                relief="sunken"
             )
 
     def reset_button(self, idx: int) -> None:
-        """Reset button to initial state"""
+        """Reset card to initial state with animation effect"""
         btn = self.buttons[idx]
-        btn.config(text="?", bg=self.card_bg, fg=self.card_fg)
+        btn.config(
+            text="?",
+            bg=self.card_bg,
+            fg=self.card_fg,
+            state="normal",
+            relief="raised"
+        )
 
     def update_moves(self, moves: int) -> None:
         """Update moves counter"""
         self.moves_label.config(text=f"Moves: {moves}")
+
     def clear_window(self) -> None:
-        """Clear all widgets from the root window"""
+        """Clear all widgets from window"""
         for widget in self.root.winfo_children():
             widget.destroy()
+
     def show_win_message(self, moves: int) -> None:
-        """Show win message"""
-        tk.messagebox.showinfo(
-            "Congratulations!",
-            f"You've won in {moves} moves!"
+        """Show modern win message with options"""
+        win_window = tk.Toplevel(self.root)
+        win_window.title("Congratulations!")
+        win_window.geometry("400x250")
+        win_window.resizable(False, False)
+        win_window.configure(bg=self.bg_color)
+        win_window.grab_set()
+
+        # Center the window
+        win_window.update_idletasks()
+        width = win_window.winfo_width()
+        height = win_window.winfo_height()
+        x = (win_window.winfo_screenwidth() // 2) - (width // 2)
+        y = (win_window.winfo_screenheight() // 2) - (height // 2)
+        win_window.geometry(f'+{x}+{y}')
+
+        # Win message
+        tk.Label(
+            win_window,
+            text="You Won! 🎉",  # Fixed emoji position
+            font=("Arial", 22, "bold"),
+            bg=self.bg_color,
+            fg=self.disabled_color
+        ).pack(pady=(20, 10))
+
+        tk.Label(
+            win_window,
+            text=f"Completed in {moves} moves!",
+            font=("Arial", 14),
+            bg=self.bg_color,
+            fg=self.text_color
+        ).pack(pady=10)
+
+        # Buttons frame
+        button_frame = tk.Frame(win_window, bg=self.bg_color)
+        button_frame.pack(pady=20)
+
+        # Play again button
+        replay_btn = tk.Button(
+            button_frame,
+            text="Play Again",
+            font=("Arial", 12, "bold"),
+            command=lambda: [win_window.destroy(), self.setup_menu(self.difficulty_command)],
+            bg=self.card_bg,
+            fg="white",
+            padx=20,
+            pady=5,
+            relief="flat"
         )
+        replay_btn.pack(side="left", padx=10, ipadx=5, ipady=3)
+        replay_btn.bind("<Enter>", lambda e: replay_btn.config(bg=self.button_hover))
+        replay_btn.bind("<Leave>", lambda e: replay_btn.config(bg=self.card_bg))
+
+        # Exit button
+        exit_btn = tk.Button(
+            button_frame,
+            text="Exit",
+            font=("Arial", 12, "bold"),
+            command=self.root.quit,
+            bg="#d64045",
+            fg="white",
+            padx=20,
+            pady=5,
+            relief="flat"
+        )
+        exit_btn.pack(side="right", padx=10, ipadx=5, ipady=3)
+        exit_btn.bind("<Enter>", lambda e: exit_btn.config(bg="#c73232"))
+        exit_btn.bind("<Leave>", lambda e: exit_btn.config(bg="#d64045"))
