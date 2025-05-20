@@ -23,7 +23,9 @@ class MemoryGameController:
     def start_game(self, rows: int, cols: int) -> None:
         """Start new game with given dimensions"""
         self.logic.setup_game(rows, cols)
+        self.logic.moves = 0  # Додано явне обнулення лічильника
         self.gui.setup_board(rows, cols, self.handle_click)
+        self.gui.update_moves(0)  # Оновлюємо відображення на 0
 
     def handle_click(self, idx: int) -> None:
         """Handle button click event"""
@@ -54,6 +56,7 @@ class MemoryGameController:
             buttons_state = [btn["state"] for btn in self.gui.buttons]
             if self.logic.check_win(buttons_state):
                 self.win_sound.play()
+                self.gui.update_moves(self.logic.moves)  # Фінальне оновлення
                 self.gui.show_win_message(self.logic.moves)
 
         elif first_index is not None:
