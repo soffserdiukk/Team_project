@@ -2,36 +2,44 @@ import tkinter as tk
 from tkinter import font, messagebox
 from typing import List, Optional, Dict, Tuple, Callable
 
-
 class MemoryGameGUI:
     def __init__(self, root: tk.Tk, difficulty_levels: Dict[str, Tuple[int, int]]):
+        """Ініціалізація графічного інтерфейсу гри.
+        Args:
+            root: Головне вікно програми (Tkinter root)
+            difficulty_levels: Словник з рівнями складності (назва: (рядки, стовпці))
+        """
         self.root = root
         self.root.title("Memory Game")
         self.difficulty_levels = difficulty_levels
 
-        # Modern color scheme
-        self.bg_color = "#f5f5f5"
-        self.card_bg = "#3a7ca5"
-        self.card_fg = "white"
-        self.card_font = ("Arial", 14, "bold")
-        self.disabled_color = "#2fbf71"
-        self.highlight_color = "#ffd166"
-        self.text_color = "#2b2d42"
-        self.button_hover = "#2a628f"
+        # Сучасна кольорова схема:
+        self.bg_color = "#f5f5f5"  # колір фону
+        self.card_bg = "#3a7ca5"  # колір карток
+        self.card_fg = "white"  # колір тексту на картках
+        self.card_font = ("Arial", 14, "bold")  # шрифт карток
+        self.disabled_color = "#2fbf71"  # колір знайдених пар
+        self.highlight_color = "#ffd166"  # колір підсвічування
+        self.text_color = "#2b2d42"  # основний колір тексту
+        self.button_hover = "#2a628f"  # колір кнопок при наведенні
 
-        self.buttons: List[tk.Button] = []
-        self.moves_label: Optional[tk.Label] = None
-        self.difficulty_command: Optional[Callable] = None
+        self.buttons: List[tk.Button] = []  # список кнопок-карток
+        self.moves_label: Optional[tk.Label] = None  # мітка для відображення ходів
+        self.difficulty_command: Optional[Callable] = None  # функція обробки вибору складності
 
     def setup_menu(self, difficulty_command: Callable) -> None:
-        """Create modern start menu with difficulty options"""
+        """Створення головного меню з вибором рівня складності.
+        Args:
+            difficulty_command: Функція, яка буде викликатись при виборі рівня
+        """
         self.clear_window()
         self.difficulty_command = difficulty_command
 
+        # Фрейм для меню
         menu_frame = tk.Frame(self.root, bg=self.bg_color)
         menu_frame.pack(expand=True, padx=20, pady=20)
 
-        # Game title
+        # Заголовок гри
         title = tk.Label(
             menu_frame,
             text="Memory Game",
@@ -41,11 +49,11 @@ class MemoryGameGUI:
         )
         title.pack(pady=(0, 30))
 
-        # Difficulty buttons
+        # Кнопки рівнів складності
         for level, (rows, cols) in self.difficulty_levels.items():
             btn = tk.Button(
                 menu_frame,
-                text=f"{level} ({rows}×{cols})",
+                text=f"{level} ({rows}×{cols})",  # Назва рівня та розмірність
                 font=self.card_font,
                 command=lambda r=rows, c=cols: self.difficulty_command(r, c),
                 width=18,
@@ -57,10 +65,11 @@ class MemoryGameGUI:
                 bd=0
             )
             btn.pack(pady=6)
+            # Ефекти при наведенні курсора
             btn.bind("<Enter>", lambda e, b=btn: b.config(bg=self.button_hover))
             btn.bind("<Leave>", lambda e, b=btn: b.config(bg=self.card_bg))
 
-        # Exit button
+        # Кнопка виходу
         exit_btn = tk.Button(
             menu_frame,
             text="Exit",
@@ -68,7 +77,7 @@ class MemoryGameGUI:
             command=self.root.quit,
             width=18,
             pady=8,
-            bg="#d64045",
+            bg="#d64045",  # червоний колір для кнопки виходу
             fg="white",
             activebackground="#c73232",
             relief="flat"
@@ -78,13 +87,17 @@ class MemoryGameGUI:
         exit_btn.bind("<Leave>", lambda e: exit_btn.config(bg="#d64045"))
 
     def setup_board(self, rows: int, cols: int, button_command: Callable) -> None:
-        """Setup modern game board with cards"""
+        """Налаштування ігрового поля з картками.
+        Args:
+            rows: Кількість рядків
+            cols: Кількість стовпців
+            button_command: Функція-обробник кліку на картку
+        """
         self.clear_window()
 
-        # Header with moves counter and menu button
+        # Верхня панель з лічильником ходів та кнопкою меню
         header_frame = tk.Frame(self.root, bg=self.bg_color)
         header_frame.pack(fill="x", pady=(10, 20), padx=20)
-
         self.moves_label = tk.Label(
             header_frame,
             text="Moves: 0",
@@ -93,7 +106,7 @@ class MemoryGameGUI:
             fg=self.text_color
         )
         self.moves_label.pack(side="left")
-
+        # Кнопка повернення до головного меню
         menu_btn = tk.Button(
             header_frame,
             text="Menu",
@@ -110,17 +123,17 @@ class MemoryGameGUI:
         menu_btn.bind("<Enter>", lambda e: menu_btn.config(bg="#6c757d"))
         menu_btn.bind("<Leave>", lambda e: menu_btn.config(bg="#8d99ae"))
 
-        # Game board with cards
+        # Ігрове поле
         board_frame = tk.Frame(self.root, bg=self.bg_color)
         board_frame.pack(expand=True, padx=20, pady=(0, 20))
 
-        self.buttons = []
+        self.buttons = []  # Очищення списку кнопок
         for i in range(rows):
             for j in range(cols):
-                idx = i * cols + j
+                idx = i * cols + j  # Лінійний індекс кнопки
                 btn = tk.Button(
                     board_frame,
-                    text="?",
+                    text="?",  # Початковий стан - знак питання
                     font=self.card_font,
                     width=4,
                     height=2,
@@ -135,9 +148,15 @@ class MemoryGameGUI:
                 self.buttons.append(btn)
 
     def update_button(self, idx: int, symbol: str, disabled: bool = False) -> None:
-        """Update card appearance with animation effect"""
+        """Оновлення вигляду картки.
+        Args:
+            idx: Індекс кнопки
+            symbol: Символ, який відображатиметься
+            disabled: Чи картка знайдена (неактивна)
+        """
         btn = self.buttons[idx]
         if disabled:
+            # Стан знайденої пари
             btn.config(
                 text=symbol,
                 state="disabled",
@@ -146,6 +165,7 @@ class MemoryGameGUI:
                 relief="sunken"
             )
         else:
+            # Стан відкритої картки
             btn.config(
                 text=symbol,
                 bg=self.highlight_color,
@@ -154,7 +174,10 @@ class MemoryGameGUI:
             )
 
     def reset_button(self, idx: int) -> None:
-        """Reset card to initial state with animation effect"""
+        """Повернення картки у початковий стан.
+        Args:
+            idx: Індекс кнопки
+        """
         btn = self.buttons[idx]
         btn.config(
             text="?",
@@ -165,35 +188,40 @@ class MemoryGameGUI:
         )
 
     def update_moves(self, moves: int) -> None:
-        """Update moves counter"""
+        """Оновлення лічильника ходів.
+        Args:
+            moves: Поточна кількість ходів
+        """
         self.moves_label.config(text=f"Moves: {moves}")
 
     def clear_window(self) -> None:
-        """Clear all widgets from window"""
+        """Очищення вікна від віджетів."""
         for widget in self.root.winfo_children():
             widget.destroy()
 
     def show_win_message(self, moves: int) -> None:
-        """Show modern win message with options"""
+        """Відображення повідомлення про перемогу.
+        Args:
+            moves: Кількість ходів, за які завершено гру
+        """
         win_window = tk.Toplevel(self.root)
         win_window.title("Congratulations!")
         win_window.geometry("400x250")
         win_window.resizable(False, False)
         win_window.configure(bg=self.bg_color)
-        win_window.grab_set()
+        win_window.grab_set()  # Модальне вікно
 
-        # Center the window
+        # Центрування вікна
         win_window.update_idletasks()
         width = win_window.winfo_width()
         height = win_window.winfo_height()
         x = (win_window.winfo_screenwidth() // 2) - (width // 2)
         y = (win_window.winfo_screenheight() // 2) - (height // 2)
         win_window.geometry(f'+{x}+{y}')
-
-        # Win message
+        # Повідомлення про перемогу
         tk.Label(
             win_window,
-            text="You Won! 🎉",  # Fixed emoji position
+            text="You Won! 🎉",
             font=("Arial", 22, "bold"),
             bg=self.bg_color,
             fg=self.disabled_color
@@ -207,11 +235,11 @@ class MemoryGameGUI:
             fg=self.text_color
         ).pack(pady=10)
 
-        # Buttons frame
+        # Фрейм для кнопок
         button_frame = tk.Frame(win_window, bg=self.bg_color)
         button_frame.pack(pady=20)
 
-        # Play again button
+        # Кнопка "Грати знову"
         replay_btn = tk.Button(
             button_frame,
             text="Play Again",
@@ -227,7 +255,7 @@ class MemoryGameGUI:
         replay_btn.bind("<Enter>", lambda e: replay_btn.config(bg=self.button_hover))
         replay_btn.bind("<Leave>", lambda e: replay_btn.config(bg=self.card_bg))
 
-        # Exit button
+        # Кнопка "Вийти"
         exit_btn = tk.Button(
             button_frame,
             text="Exit",
